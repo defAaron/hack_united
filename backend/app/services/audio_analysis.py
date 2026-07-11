@@ -27,6 +27,9 @@ def _extract_audio_wav(video_path: Path) -> Path:
     subprocess.run(
         [
             "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
             "-y",
             "-i",
             str(video_path),
@@ -34,7 +37,9 @@ def _extract_audio_wav(video_path: Path) -> Path:
             "-ac",
             "1",
             "-ar",
-            "22050",
+            "16000",
+            "-c:a",
+            "pcm_s16le",
             str(tmp_wav),
         ],
         check=True,

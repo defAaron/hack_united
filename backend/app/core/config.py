@@ -36,7 +36,9 @@ class Settings(BaseSettings):
     target_duration_seconds: float = 90.0
     audio_weight: float = 0.6
     motion_weight: float = 0.4
-    motion_sample_fps: float = 5.0
+    # Keep this low — motion only needs a coarse excitement curve, and higher
+    # fps dominates runtime on long AV1/H.265 uploads.
+    motion_sample_fps: float = 2.0
 
     @property
     def cors_origin_list(self) -> list[str]:

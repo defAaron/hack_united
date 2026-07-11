@@ -3,13 +3,14 @@ Pipeline orchestrator.
 
 Ties together audio analysis -> motion analysis -> fusion/ranking -> composition,
 updating job status/progress at each stage. Runs as a FastAPI BackgroundTask for
-the hackathon MVP; swap for a Celery/RQ worker (PRD 8 stretch goal) if the app
-needs to scale beyond a single process.
+the hackathon MVP.
 """
 
 from __future__ import annotations
 
+import logging
 import subprocess
+import time
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,7 @@ from app.services.signal_utils import TimeSeries
 from app.storage.local import StorageBackend
 
 OUTPUT_FILENAME = "highlight_reel.mp4"
+logger = logging.getLogger(__name__)
 
 
 def _probe_duration_seconds(video_path: Path) -> float:
@@ -51,23 +53,29 @@ def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) 
         return
 
     source_path = Path(job.source_path)
+    started = time.perf_counter()
 
     try:
         duration_seconds = _probe_duration_seconds(source_path)
+        logger.info("Job %s started duration=%.1fs path=%s", job_id, duration_seconds, source_path)
 
         job_manager.update(
             job_id, stage=JobStage.ANALYZING_AUDIO, progress=10, message="Analyzing crowd reactions..."
         )
+        stage_started = time.perf_counter()
         try:
             audio_series = analyze_audio_excitement(source_path)
         except Exception:
             # No usable audio track - fusion stage will fall back to motion-only.
             audio_series = TimeSeries(timestamps=np.array([]), values=np.array([]))
+        logger.info("Job %s audio analysis took %.1fs", job_id, time.perf_counter() - stage_started)
 
         job_manager.update(
             job_id, stage=JobStage.ANALYZING_MOTION, progress=35, message="Detecting big plays..."
         )
+        stage_started = time.perf_counter()
         motion_series = motion_analysis.analyze_motion_excitement(source_path)
+        logger.info("Job %s motion analysis took %.1fs", job_id, time.perf_counter() - stage_started)
 
         job_manager.update(
             job_id, stage=JobStage.SELECTING_HIGHLIGHTS, progress=60, message="Selecting the best moments..."
@@ -76,10 +84,13 @@ def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) 
         clips = fusion.select_highlight_clips(audio_series, motion_series, duration_seconds, settings)
         if not clips:
             raise RuntimeError("No highlight moments were detected in this video")
+        logger.info("Job %s selected %d clips", job_id, len(clips))
 
         job_manager.update(job_id, stage=JobStage.RENDERING, progress=80, message="Editing your reel...")
+        stage_started = time.perf_counter()
         output_path = storage.path_for(job_id, OUTPUT_FILENAME)
         rendered_duration = composer.render_highlight_reel(source_path, clips, output_path)
+        logger.info("Job %s render took %.1fs", job_id, time.perf_counter() - stage_started)
 
         job_manager.update(
             job_id,
@@ -90,5 +101,7 @@ def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) 
             duration_seconds=rendered_duration,
             clips=clips,
         )
+        logger.info("Job %s completed in %.1fs", job_id, time.perf_counter() - started)
     except Exception as exc:  # noqa: BLE001 - surface any pipeline failure to the client
+        logger.exception("Job %s failed after %.1fs", job_id, time.perf_counter() - started)
         job_manager.update(job_id, stage=JobStage.ERROR, progress=100, error=str(exc))

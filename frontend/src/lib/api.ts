@@ -1,4 +1,9 @@
-import type { JobResultResponse, JobStatusResponse, UploadResponse } from "./types";
+import type {
+  JobResultResponse,
+  JobStatusResponse,
+  MusicTrack,
+  UploadResponse,
+} from "./types";
 
 /**
  * Base URL of the FastAPI backend. Configure via NEXT_PUBLIC_API_URL:
@@ -24,9 +29,17 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function uploadVideo(file: File): Promise<UploadResponse> {
+export async function listMusicTracks(): Promise<MusicTrack[]> {
+  const response = await fetch(`${API_BASE_URL}/api/music`);
+  return handleResponse<MusicTrack[]>(response);
+}
+
+export async function uploadVideo(file: File, musicTrackId?: string): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
+  if (musicTrackId) {
+    formData.append("music_track_id", musicTrackId);
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/upload`, {
     method: "POST",

@@ -20,6 +20,7 @@ from app.core.job_manager import JobManager
 from app.models.schemas import JobStage
 from app.services import composer, fusion, motion_analysis
 from app.services.audio_analysis import analyze_audio_excitement
+from app.services.music_catalog import get_music_track, resolve_music_path
 from app.services.signal_utils import TimeSeries
 from app.storage.local import StorageBackend
 
@@ -86,10 +87,22 @@ def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) 
             raise RuntimeError("No highlight moments were detected in this video")
         logger.info("Job %s selected %d clips", job_id, len(clips))
 
-        job_manager.update(job_id, stage=JobStage.RENDERING, progress=80, message="Editing your reel...")
+        music_track = get_music_track(job.music_track_id)
+        music_path = resolve_music_path(job.music_track_id)
+        music_title = music_track.title if music_track else None
+        music_id = music_track.id if music_track else None
+
+        job_manager.update(
+            job_id,
+            stage=JobStage.RENDERING,
+            progress=80,
+            message=f"Editing your reel{f' with {music_title}' if music_title else ''}...",
+        )
         stage_started = time.perf_counter()
         output_path = storage.path_for(job_id, OUTPUT_FILENAME)
-        rendered_duration = composer.render_highlight_reel(source_path, clips, output_path)
+        rendered_duration = composer.render_highlight_reel(
+            source_path, clips, output_path, music_track_path=music_path
+        )
         logger.info("Job %s render took %.1fs", job_id, time.perf_counter() - stage_started)
 
         job_manager.update(
@@ -100,6 +113,8 @@ def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) 
             result_path=str(output_path),
             duration_seconds=rendered_duration,
             clips=clips,
+            music_track_id=music_id,
+            music_track_title=music_title,
         )
         logger.info("Job %s completed in %.1fs", job_id, time.perf_counter() - started)
     except Exception as exc:  # noqa: BLE001 - surface any pipeline failure to the client

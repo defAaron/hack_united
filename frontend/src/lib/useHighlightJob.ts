@@ -32,11 +32,11 @@ export function useHighlightJob() {
   }, [stopPolling]);
 
   const submit = useCallback(
-    async (file: File) => {
+    async (file: File, musicTrackId?: string) => {
       reset();
       setState("uploading");
       try {
-        const { job_id } = await uploadVideo(file);
+        const { job_id } = await uploadVideo(file, musicTrackId);
         setState("processing");
 
         pollRef.current = setInterval(async () => {

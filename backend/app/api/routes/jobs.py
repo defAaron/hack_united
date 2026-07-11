@@ -11,11 +11,12 @@ import logging
 import threading
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.core.config import Settings, get_settings
 from app.core.job_manager import JobManager, get_job_manager
 from app.models.schemas import JobResultResponse, JobStage, JobStatusResponse, UploadResponse
+from app.services.music_catalog import get_music_track, list_music_tracks
 from app.services.pipeline import OUTPUT_FILENAME, run_pipeline
 from app.storage.local import StorageBackend, get_storage_backend
 
@@ -32,13 +33,23 @@ ALLOWED_CONTENT_TYPES = {
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_video(
-    file: UploadFile,
+    file: UploadFile = File(...),
+    music_track_id: str | None = Form(default=None),
     settings: Settings = Depends(get_settings),
     job_manager: JobManager = Depends(get_job_manager),
     storage: StorageBackend = Depends(get_storage_backend),
 ) -> UploadResponse:
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+
+    available_ids = {track.id for track in list_music_tracks()}
+    if music_track_id and music_track_id not in available_ids:
+        raise HTTPException(status_code=400, detail=f"Unknown music track: {music_track_id}")
+
+    selected_track = get_music_track(music_track_id) if music_track_id else None
+    if selected_track is None and available_ids:
+        # Default to the first catalog track when the client omits a selection.
+        selected_track = list_music_tracks()[0]
 
     # Stream to disk instead of buffering the whole file in RAM (176MB+ uploads).
     job = job_manager.create_job()
@@ -62,8 +73,20 @@ async def upload_video(
                 )
             out.write(chunk)
 
-    job_manager.update(job.id, source_path=str(destination), stage=JobStage.QUEUED, progress=0)
-    logger.info("Job %s uploaded %.1fMB — starting pipeline thread", job.id, bytes_written / (1024 * 1024))
+    job_manager.update(
+        job.id,
+        source_path=str(destination),
+        stage=JobStage.QUEUED,
+        progress=0,
+        music_track_id=selected_track.id if selected_track else None,
+        music_track_title=selected_track.title if selected_track else None,
+    )
+    logger.info(
+        "Job %s uploaded %.1fMB music=%s — starting pipeline thread",
+        job.id,
+        bytes_written / (1024 * 1024),
+        selected_track.id if selected_track else "none",
+    )
 
     # Dedicated daemon thread (not FastAPI BackgroundTasks) so long AV1 jobs
     # keep running independently of the request lifecycle / reload shutdown.
@@ -110,4 +133,6 @@ async def get_job_result(
         duration_seconds=job.duration_seconds,
         clip_count=len(job.clips),
         clips=job.clips,
+        music_track_id=job.music_track_id,
+        music_track_title=job.music_track_title,
     )

@@ -42,6 +42,12 @@ class HighlightClip(BaseModel):
     excitement_score: float
 
 
+class MusicTrackResponse(BaseModel):
+    id: str
+    title: str
+    preview_url: str
+
+
 class JobResultResponse(BaseModel):
     job_id: str
     video_url: str
@@ -49,6 +55,8 @@ class JobResultResponse(BaseModel):
     duration_seconds: float
     clip_count: int
     clips: list[HighlightClip] = Field(default_factory=list)
+    music_track_id: str | None = None
+    music_track_title: str | None = None
 
 
 class PipelineOptions(BaseModel):

@@ -11,9 +11,14 @@ export function ResultPanel({ result, onReset }: ResultPanelProps) {
 
   return (
     <div className="w-full max-w-2xl text-center">
-      <p className="mb-4 text-lg font-semibold text-emerald-300">
-        🎉 Your {result.duration_seconds.toFixed(0)}s highlight reel is ready ({result.clip_count} clips)
+      <p className="mb-2 text-lg font-semibold text-emerald-300">
+        Your {result.duration_seconds.toFixed(0)}s highlight reel is ready ({result.clip_count} clips)
       </p>
+      {result.music_track_title && (
+        <p className="mb-4 text-sm text-slate-400">
+          Soundtrack: <span className="text-slate-200">{result.music_track_title}</span> (mixed with original audio)
+        </p>
+      )}
 
       <video
         src={videoSrc}

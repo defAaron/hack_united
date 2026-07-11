@@ -21,7 +21,7 @@ export default function Home() {
         </p>
       </header>
 
-      {state === "idle" && <UploadPanel onFileSelected={submit} />}
+      {state === "idle" && <UploadPanel onSubmit={submit} />}
       {(state === "uploading" || state === "processing") && <ProcessingPanel status={status} />}
       {state === "done" && result && <ResultPanel result={result} onReset={reset} />}
       {state === "error" && <ErrorPanel message={errorMessage ?? "Unknown error"} onReset={reset} />}

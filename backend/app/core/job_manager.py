@@ -29,6 +29,8 @@ class Job:
     thumbnail_path: str | None = None
     duration_seconds: float = 0.0
     clips: list[HighlightClip] = field(default_factory=list)
+    music_track_id: str | None = None
+    music_track_title: str | None = None
 
 
 class JobManager:

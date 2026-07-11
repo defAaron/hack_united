@@ -6,8 +6,6 @@ backend/*.egg-info/
 backend/.pytest_cache/
 backend/storage_data/
 backend/.env
-backend/sample_media/*
-!backend/sample_media/.gitkeep
 
 # --- Frontend (Next.js) ---
 frontend/node_modules/
@@ -18,3 +16,5 @@ frontend/.env.local
 # --- General ---
 .DS_Store
 *.log
+*.mp3.download/
+

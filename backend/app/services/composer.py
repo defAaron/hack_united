@@ -2,8 +2,8 @@
 Video composition / rendering (PRD 5.2 step 5).
 
 Cuts selected highlight clips and concatenates them with ffmpeg.
-Uses input seeking (`-ss` before `-i`) so we do not re-decode the entire
-source for every clip — critical for long AV1/H.265 uploads.
+When a background music track is provided, original clip audio is mixed
+under the music (ducked) so both are audible in the final reel.
 """
 
 from __future__ import annotations
@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 ENCODE_PRESET = "ultrafast"
 ENCODE_CRF = "23"
+ORIGINAL_AUDIO_VOLUME = 0.45
+MUSIC_VOLUME = 0.65
 
 
 def _run_ffmpeg(args: list[str]) -> None:
@@ -48,6 +50,26 @@ def _probe_duration_seconds(video_path: Path) -> float:
         text=True,
     )
     return float(result.stdout.strip())
+
+
+def _has_audio_stream(video_path: Path) -> bool:
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "a",
+            "-show_entries",
+            "stream=index",
+            "-of",
+            "csv=p=0",
+            str(video_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
 
 
 def render_highlight_reel(
@@ -118,32 +140,69 @@ def render_highlight_reel(
         )
 
         if music_track_path is not None and music_track_path.exists():
-            _run_ffmpeg(
-                [
-                    "-i",
-                    str(concat_path),
-                    "-stream_loop",
-                    "-1",
-                    "-i",
-                    str(music_track_path),
-                    "-filter_complex",
-                    "[0:a]volume=0.4[a0];[1:a]volume=0.7[a1];"
-                    "[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                    "-c:v",
-                    "copy",
-                    "-c:a",
-                    "aac",
-                    "-shortest",
-                    str(output_path),
-                ]
-            )
+            _mix_original_with_music(concat_path, music_track_path, output_path)
         else:
             output_path.write_bytes(concat_path.read_bytes())
 
     duration = _probe_duration_seconds(output_path)
-    logger.info("Rendered highlight reel duration=%.1fs clips=%d", duration, len(clips))
+    logger.info(
+        "Rendered highlight reel duration=%.1fs clips=%d music=%s",
+        duration,
+        len(clips),
+        music_track_path.name if music_track_path else "none",
+    )
     return duration
+
+
+def _mix_original_with_music(video_path: Path, music_path: Path, output_path: Path) -> None:
+    """Overlay ducked original audio with looping background music."""
+    has_original_audio = _has_audio_stream(video_path)
+
+    if has_original_audio:
+        filter_complex = (
+            f"[0:a]volume={ORIGINAL_AUDIO_VOLUME}[a0];"
+            f"[1:a]volume={MUSIC_VOLUME}[a1];"
+            "[a0][a1]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[aout]"
+        )
+        args = [
+            "-i",
+            str(video_path),
+            "-stream_loop",
+            "-1",
+            "-i",
+            str(music_path),
+            "-filter_complex",
+            filter_complex,
+            "-map",
+            "0:v",
+            "-map",
+            "[aout]",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-shortest",
+            str(output_path),
+        ]
+    else:
+        # No game audio — still attach the selected music track.
+        args = [
+            "-i",
+            str(video_path),
+            "-stream_loop",
+            "-1",
+            "-i",
+            str(music_path),
+            "-map",
+            "0:v",
+            "-map",
+            "1:a",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-shortest",
+            str(output_path),
+        ]
+
+    _run_ffmpeg(args)

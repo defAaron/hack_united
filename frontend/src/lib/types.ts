@@ -31,6 +31,12 @@ export interface HighlightClip {
   excitement_score: number;
 }
 
+export interface MusicTrack {
+  id: string;
+  title: string;
+  preview_url: string;
+}
+
 export interface JobResultResponse {
   job_id: string;
   video_url: string;
@@ -38,6 +44,8 @@ export interface JobResultResponse {
   duration_seconds: number;
   clip_count: number;
   clips: HighlightClip[];
+  music_track_id?: string | null;
+  music_track_title?: string | null;
 }
 
 export const STAGE_LABELS: Record<JobStage, string> = {

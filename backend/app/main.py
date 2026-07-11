@@ -8,12 +8,14 @@ Run locally with:
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.jobs import router as jobs_router
+from app.api.routes.music import router as music_router
 from app.core.config import get_settings
 
 logging.basicConfig(
@@ -36,10 +38,15 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(jobs_router)
+    app.include_router(music_router)
 
     # Serves rendered highlight reels + source uploads for local/dev use.
     # Swap for signed S3/CDN URLs (see app/storage) before a hosted deployment.
     app.mount("/media", StaticFiles(directory=str(settings.storage_dir)), name="media")
+
+    assets_dir = Path(__file__).resolve().parents[1] / "assets"
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
     @app.get("/health")
     async def health_check() -> dict[str, str]:

@@ -2,7 +2,7 @@
 
 AI-powered post-game highlight editor. Upload raw game footage, get a music-synced highlight reel back automatically — with optional timeline tweaks.
 
-See [`docs/PRD.md`](./docs/PRD.md) for the full product/technical spec.
+See [`docs/PRD.md`](./docs/PRD.md) for the full product/technical spec, and [`docs/DEVPOST.md`](./docs/DEVPOST.md) for the Devpost writeup.
 
 ## Features
 

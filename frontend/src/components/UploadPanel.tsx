@@ -69,7 +69,7 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
   );
 
   return (
-    <div className="w-full max-w-xl">
+    <div className="panel-surface w-full max-w-xl rounded-2xl p-6 sm:p-8">
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -82,10 +82,10 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
           handleFile(e.dataTransfer.files?.[0]);
         }}
         onClick={() => inputRef.current?.click()}
-        className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-12 text-center transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-12 text-center transition-colors ${
           isDragging
-            ? "border-emerald-400 bg-emerald-950/30"
-            : "border-slate-600 bg-slate-900/40 hover:border-slate-400"
+            ? "border-[color:var(--accent)] bg-[rgba(243,229,171,0.08)]"
+            : "border-[color:var(--panel-border)] hover:border-[rgba(243,229,171,0.4)]"
         }`}
       >
         <input
@@ -95,33 +95,32 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
           className="hidden"
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
-        <span className="text-3xl">🎬</span>
         {selectedFile ? (
           <>
-            <p className="font-medium text-slate-100">{selectedFile.name}</p>
-            <p className="text-sm text-slate-400">
+            <p className="font-medium text-[color:var(--accent)]">{selectedFile.name}</p>
+            <p className="text-sm text-[color:var(--muted)]">
               {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB — click to choose a different file
             </p>
           </>
         ) : (
           <>
-            <p className="font-medium text-slate-100">Drag & drop your game footage</p>
-            <p className="text-sm text-slate-400">or click to browse (MP4, MOV, AVI)</p>
+            <p className="font-medium text-[color:var(--accent)]">Drag & drop your game footage</p>
+            <p className="text-sm text-[color:var(--muted)]">or click to browse (MP4, MOV, AVI)</p>
           </>
         )}
       </div>
 
       <div className="mt-6">
-        <p className="mb-3 text-sm font-medium text-slate-300">Background music</p>
-        {tracksError && <p className="mb-3 text-sm text-red-400">{tracksError}</p>}
+        <p className="mb-3 text-sm font-medium text-[color:var(--accent)]">Background music</p>
+        {tracksError && <p className="mb-3 text-sm text-red-300">{tracksError}</p>}
         <div className="space-y-2">
           {tracks.map((track) => (
             <label
               key={track.id}
               className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-3 transition-colors ${
                 selectedTrackId === track.id
-                  ? "border-emerald-400 bg-emerald-950/40"
-                  : "border-slate-700 bg-slate-900/50 hover:border-slate-500"
+                  ? "border-[color:var(--accent)] bg-[rgba(243,229,171,0.1)]"
+                  : "border-[color:var(--panel-border)] hover:border-[rgba(243,229,171,0.35)]"
               }`}
             >
               <span className="flex items-center gap-3">
@@ -131,9 +130,9 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
                   value={track.id}
                   checked={selectedTrackId === track.id}
                   onChange={() => setSelectedTrackId(track.id)}
-                  className="accent-emerald-400"
+                  className="accent-[#f3e5ab]"
                 />
-                <span className="font-medium text-slate-100">{track.title}</span>
+                <span className="font-medium text-[color:var(--accent)]">{track.title}</span>
               </span>
               <button
                 type="button"
@@ -142,17 +141,17 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
                   e.stopPropagation();
                   togglePreview(track);
                 }}
-                className="rounded-lg border border-slate-600 px-3 py-1 text-xs text-slate-300 hover:border-slate-400"
+                className="rounded-lg border border-[color:var(--panel-border)] px-3 py-1 text-xs text-[color:var(--muted)] hover:border-[rgba(243,229,171,0.45)] hover:text-[color:var(--accent)]"
               >
                 {previewingId === track.id ? "Stop" : "Preview"}
               </button>
             </label>
           ))}
           {tracks.length === 0 && !tracksError && (
-            <p className="text-sm text-slate-500">Loading music tracks...</p>
+            <p className="text-sm text-[color:var(--muted)]">Loading music tracks...</p>
           )}
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-[color:var(--muted)]">
           Original game audio stays in the reel, mixed under the selected track.
         </p>
       </div>
@@ -161,7 +160,7 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
         type="button"
         disabled={!selectedFile || !selectedTrackId}
         onClick={() => selectedFile && selectedTrackId && onSubmit(selectedFile, selectedTrackId)}
-        className="mt-6 w-full rounded-xl bg-emerald-500 px-6 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+        className="mt-6 w-full rounded-xl bg-[color:var(--accent)] px-6 py-3 font-semibold text-black transition-colors hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:bg-[#3a3420] disabled:text-[#7a7048]"
       >
         Generate Highlights
       </button>

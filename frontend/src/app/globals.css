@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #f3e5ab;
+  --muted: #a8986a;
+  --panel: rgba(12, 12, 12, 0.72);
+  --panel-border: rgba(243, 229, 171, 0.18);
+  --accent: #f3e5ab;
+  --accent-strong: #ffe08a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), Georgia, serif;
+}
+
+.landing-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(243, 229, 171, 0.14), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(180, 140, 40, 0.1), transparent 50%),
+    radial-gradient(ellipse 50% 35% at 10% 80%, rgba(120, 90, 20, 0.08), transparent 45%),
+    #050505;
+}
+
+.landing-strands {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.landing-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 5, 0.35) 0%, transparent 28%, transparent 72%, rgba(5, 5, 5, 0.55) 100%),
+    radial-gradient(ellipse at center, transparent 35%, rgba(5, 5, 5, 0.65) 100%);
+}
+
+.landing-content {
+  position: relative;
+  z-index: 2;
+}
+
+.display-title {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(243, 229, 171, 0.12);
+}
+
+.panel-surface {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(14px);
 }

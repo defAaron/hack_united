@@ -19,22 +19,24 @@ export function ProcessingPanel({ status }: ProcessingPanelProps) {
   const currentIndex = status ? STAGE_ORDER.indexOf(status.stage as (typeof STAGE_ORDER)[number]) : -1;
 
   return (
-    <div className="w-full max-w-xl text-center">
-      <p className="mb-4 text-lg font-medium text-slate-100">{label}</p>
+    <div className="panel-surface w-full max-w-xl rounded-2xl p-8 text-center">
+      <p className="mb-4 text-lg font-medium text-[color:var(--accent)]">{label}</p>
 
-      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-800">
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/50">
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-[color:var(--accent)] transition-all duration-500 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      <ol className="mt-8 flex flex-wrap justify-center gap-2 text-xs text-slate-500">
+      <ol className="mt-8 flex flex-wrap justify-center gap-2 text-xs text-[color:var(--muted)]">
         {STAGE_ORDER.slice(0, -1).map((stage, index) => (
           <li
             key={stage}
             className={`rounded-full px-3 py-1 ${
-              index <= currentIndex ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-800/60"
+              index <= currentIndex
+                ? "bg-[rgba(243,229,171,0.16)] text-[color:var(--accent)]"
+                : "bg-black/35"
             }`}
           >
             {STAGE_LABELS[stage]}

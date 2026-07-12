@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     # --- Highlight detection algorithm defaults (PRD 6.3) ---
     analysis_window_seconds: float = 0.5
     min_gap_between_clips_seconds: float = 8.0
-    clip_pre_roll_seconds: float = 3.0
+    # Include a few seconds of lead-in so the highlight shows the buildup
+    # before the peak (goal, dunk, etc.), not just the moment itself.
+    clip_pre_roll_seconds: float = 4.0
     clip_post_roll_seconds: float = 4.0
     target_duration_seconds: float = 90.0
     audio_weight: float = 0.6

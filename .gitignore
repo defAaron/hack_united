@@ -6,15 +6,17 @@ backend/*.egg-info/
 backend/.pytest_cache/
 backend/storage_data/
 backend/.env
+backend/*TEMP_MPY*
 
 # --- Frontend (Next.js) ---
 frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.env.local
+frontend/.vercel/
 
 # --- General ---
 .DS_Store
 *.log
 *.mp3.download/
-
+*.download/

@@ -5,17 +5,11 @@ import { TimelineEditor } from "./TimelineEditor";
 
 interface ResultPanelProps {
   result: JobResultResponse;
-  isRerendering?: boolean;
   onRerender: (clips: HighlightClip[]) => void;
   onReset: () => void;
 }
 
-export function ResultPanel({
-  result,
-  isRerendering = false,
-  onRerender,
-  onReset,
-}: ResultPanelProps) {
+export function ResultPanel({ result, onRerender, onReset }: ResultPanelProps) {
   const videoSrc = resolveMediaUrl(result.video_url);
   // Bust browser cache after re-render (same URL path, new file contents).
   const cacheBustedSrc = `${videoSrc}?t=${encodeURIComponent(String(result.duration_seconds))}-${result.clip_count}`;
@@ -63,7 +57,6 @@ export function ResultPanel({
       <TimelineEditor
         key={`${result.job_id}-${result.clip_count}-${result.clips.map((c) => c.start_seconds).join(",")}`}
         result={result}
-        isBusy={isRerendering}
         onRerender={onRerender}
       />
     </div>

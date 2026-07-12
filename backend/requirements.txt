@@ -4,12 +4,10 @@ python-multipart==0.0.9
 pydantic==2.9.2
 pydantic-settings==2.5.2
 
-# Media processing (added as pipeline stages are implemented)
-ffmpeg-python==0.2.0
+# Media processing
 librosa==0.10.2.post1
-opencv-python-headless==4.10.0.84
 numpy==1.26.4
-moviepy==1.0.3
+# System ffmpeg/ffprobe must also be installed (see README / Dockerfile).
 
 # Dev / testing
 pytest==8.3.3

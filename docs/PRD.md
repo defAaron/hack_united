@@ -1,8 +1,8 @@
 # ClipCoach — AI Post-Game Highlight Editor
 ### Product Requirements Document (PRD)
-**Hackathon:** Hack United — Sport Track
-**Version:** 1.0 (Hackathon Scope)
-**Last updated:** July 10, 2026
+**Hackathon:** Hack United — Sport Track  
+**Version:** 1.1 (As-built)  
+**Last updated:** July 12, 2026
 
 ---
 
@@ -12,45 +12,46 @@
 Amateur teams, high school/college athletes, weekend leagues, and content creators record hours of raw game footage but rarely have the time, tools, or editing skill to turn it into shareable highlight reels. Professional teams have dedicated video staff; everyone else is stuck scrubbing through 90+ minutes of footage manually, or the footage never gets watched again.
 
 ### 1.2 Solution
-**ClipCoach** is a web app that ingests raw game footage (any sport), automatically detects the most exciting/important moments using multimodal signal analysis (audio spikes, motion/visual peaks, and optional scoreboard/OCR cues), and auto-generates a polished, music-synced highlight reel — with zero manual editing required.
+**ClipCoach** is a web app that ingests raw game footage (any sport), automatically detects the most exciting/important moments using multimodal signal analysis (audio spikes + motion/visual peaks), and auto-generates a polished, music-synced highlight reel. Users can then tweak the timeline (keep/drop, reorder, nudge) and re-render without re-uploading.
 
 ### 1.3 Elevator Pitch
 "Upload your game tape. Get a highlight reel back in minutes — no editor, no timeline, no skills needed."
 
 ### 1.4 Track & Theme Fit
-- **Sport Track**: directly built for sports footage (soccer, basketball, football, etc.), tying into the World Cup theme.
+- **Sport Track**: built for sports footage (soccer, basketball, football, etc.).
 - Judging criteria fit:
-  - **Creativity**: multimodal event detection (audio + video) applied to an underserved amateur-sports use case.
-  - **Technical Complexity**: audio signal processing, motion analysis/CV, event fusion/ranking algorithm, automated video composition pipeline.
-  - **Practicality**: solves a real, immediate pain point; usable by any team the day after a game.
+  - **Creativity**: multimodal event detection (audio + video) for amateur sports.
+  - **Technical Complexity**: audio signal processing, motion analysis, event fusion/ranking, automated ffmpeg composition.
+  - **Practicality**: usable the day after a game with a simple upload → preview → download flow.
 
 ---
 
 ## 2. Goals & Non-Goals
 
-### 2.1 Goals (Hackathon MVP)
-1. Accept an uploaded video file (mp4) of a game.
-2. Automatically detect candidate "highlight" moments using audio energy spikes (crowd noise/celebration) and visual motion peaks.
-3. Rank and select the top N moments to hit a target reel duration (e.g., 60–120 seconds).
-4. Auto-cut and stitch selected clips with smooth transitions.
-5. Auto-sync a background music track to the edit (beat-matched cuts if time allows).
-6. Export a final rendered highlight video, playable/downloadable in-browser.
-7. Provide a simple web UI: upload → processing status → preview → download.
+### 2.1 Goals (Shipped)
+1. Accept uploaded video (mp4/mov), max ~500MB.
+2. Detect highlight moments via audio energy + visual motion.
+3. Rank/select clips to hit a user-chosen reel length (30 / 60 / 90s).
+4. Cut and stitch clips with ffmpeg (single-pass filter graph preferred).
+5. Mix a chosen royalty-free soundtrack with original game audio (ducked).
+6. Preview and download the rendered reel in-browser.
+7. Timeline editor: keep/drop, reorder, ±2s nudge, re-render from existing source.
+8. Simple web UI: upload → processing status → preview/edit → download.
+9. Hosted deployment: Next.js on Vercel + FastAPI on Railway.
 
-### 2.2 Stretch Goals (if time permits)
-- Scoreboard OCR to detect score-change events precisely (soccer goal, basketball score).
-- Player jersey/number detection to auto-tag "who scored."
-- User-adjustable "excitement threshold" slider to make reels longer/shorter.
-- Auto-generated on-screen captions/graphics (e.g., "GOAL!", timestamp, score).
-- Multi-camera angle support (pick best angle per moment).
-- Shareable link + social export presets (9:16 for Reels/TikTok, 16:9 for YouTube).
+### 2.2 Stretch / Future
+- Scoreboard OCR / jersey detection.
+- Sport-specific presets and richer pre-generate sliders.
+- “Why selected” explainability cards per clip.
+- Social export presets (9:16 / 16:9).
+- Persistent cloud storage / shareable links.
 
-### 2.3 Non-Goals (Explicitly Out of Scope for Hackathon)
-- Live/real-time streaming ingestion (batch upload only).
-- Mobile native app (web-responsive only).
-- Multi-user accounts, auth, or persistent cloud storage beyond session.
-- Support for every sport's nuanced rules (focus on generic "action peak" detection, not sport-specific rule engines).
-- Professional broadcast-quality color grading/editing.
+### 2.3 Non-Goals (Out of Scope)
+- Live/real-time streaming ingestion.
+- Mobile native app.
+- Multi-user accounts / auth.
+- Sport-specific rule engines.
+- Broadcast-quality color grading.
 
 ---
 
@@ -58,17 +59,17 @@ Amateur teams, high school/college athletes, weekend leagues, and content creato
 
 | User | Use Case |
 |---|---|
-| Amateur/rec league team manager | Upload game footage, get shareable highlight reel for team group chat / socials |
-| High school/college athlete | Build a highlight reel for recruiting purposes |
-| Sports content creator | Speed up highlight production for a channel |
-| Parent filming kids' games | Turn raw footage into a fun recap to share with family |
-| Hackathon judges (demo) | Upload a sample clip live, see reel generated in real time |
+| Amateur/rec league team manager | Shareable highlight reel for group chat / socials |
+| High school/college athlete | Recruiting reel |
+| Sports content creator | Faster highlight production |
+| Parent filming kids' games | Fun recap for family |
+| Hackathon judges | Live upload demo |
 
 ### 3.1 User Stories
-- As a team manager, I want to upload my full match recording and get a 90-second highlight reel without manually scrubbing through footage.
-- As a user, I want the reel to feel "produced" — with music and smooth cuts — not just a raw montage.
-- As a user, I want to see processing progress so I know the app isn't frozen on a large file.
-- As a user, I want to preview and download the final video easily.
+- Upload a full match recording and get a highlight reel without scrubbing footage.
+- Reel should feel produced (music + clean cuts).
+- See processing progress so large uploads don’t feel frozen.
+- Preview, lightly edit the timeline, and download the final video.
 
 ---
 
@@ -77,36 +78,32 @@ Amateur teams, high school/college athletes, weekend leagues, and content creato
 ### 4.1 Functional Requirements
 
 **FR1 — Upload**
-- User can upload a video file (mp4/mov), max size ~500MB for hackathon demo (or provide a preset sample video for judges).
-- Client validates file type/size before upload.
+- Upload mp4/mov; client validates type/size.
+- Choose soundtrack and target duration (30/60/90s).
 
 **FR2 — Processing Pipeline**
-- System extracts audio track and analyzes energy/amplitude over time to find spikes (cheering, whistle, impact sounds).
-- System samples video frames and computes motion intensity (optical flow or frame-differencing) to find action bursts.
-- System fuses audio + visual signals into a single "excitement score" timeline.
-- System selects local maxima above a threshold as candidate highlight timestamps, with a minimum gap between selections to avoid duplicates/overlaps.
-- System expands each selected timestamp into a clip window (e.g., 3s before, 4s after the peak) for context.
-- System trims/merges clips to fit a target total duration (default 90s, configurable).
+- Extract audio; analyze energy/RMS over windows (librosa).
+- Sample low-res frames via ffmpeg; compute frame-difference motion.
+- Fuse audio + motion into an excitement curve; select spaced local maxima.
+- Expand peaks into clip windows (pre/post roll); fill target duration.
 
 **FR3 — Video Composition**
-- System cuts the selected clip segments from the source video.
-- System applies simple transitions between clips (hard cut or short crossfade).
-- System overlays a background music track (royalty-free, pre-selected or user-chosen from a small library) at appropriate volume, ducking under original clip audio.
-- System renders a single output video file.
+- Cut/concat selected segments with ffmpeg.
+- Mix background music under original audio (ducking).
+- Cap render height on hosted environments to avoid OOM.
 
-**FR4 — Playback & Export**
-- User can preview the rendered highlight reel in-browser.
-- User can download the final mp4.
-- (Stretch) User can regenerate with different duration/threshold settings without re-uploading.
+**FR4 — Playback, Edit & Export**
+- In-browser preview + download.
+- Timeline editor → `POST /api/jobs/{id}/rerender` without re-upload/re-analysis.
 
 **FR5 — Status/Feedback**
-- UI shows processing stages (Uploading → Analyzing Audio → Analyzing Motion → Selecting Highlights → Rendering → Done) with progress indication.
+- Stages: queued → analyzing_audio → analyzing_motion → selecting_highlights → rendering → done/error.
 
 ### 4.2 Non-Functional Requirements
-- **Performance**: process a 10–20 minute clip in under ~2–3 minutes on demo hardware (use downsampled analysis resolution/frame rate to stay fast).
-- **Reliability**: pipeline should gracefully handle videos with no clear audio spikes (fallback to motion-only scoring).
-- **Usability**: no login required; single-page flow simple enough for a live judge demo.
-- **Portability**: runs locally via Docker/simple setup for demo; not required to be cloud-deployed, but bonus if hosted.
+- **Performance**: ~10–20 min clip analyzed + rendered in minutes on demo hardware (downsampled motion analysis).
+- **Reliability**: flat audio falls back toward motion-only scoring.
+- **Usability**: no login; single-page flow.
+- **Deployment**: Vercel frontend + Railway Docker backend with CORS + healthcheck.
 
 ---
 
@@ -116,173 +113,136 @@ Amateur teams, high school/college athletes, weekend leagues, and content creato
 ```
 ┌─────────────┐     upload      ┌──────────────────┐
 │   Frontend  │ ───────────────▶ │   Backend API     │
-│  (React/    │                  │  (FastAPI/Node)    │
-│   Next.js)  │ ◀─── status/ ──  │                    │
+│  (Next.js)  │                  │  (FastAPI)        │
+│             │ ◀─── status/ ──  │                    │
 └─────────────┘     result       └─────────┬──────────┘
                                             │
                           ┌─────────────────┼─────────────────┐
                           ▼                 ▼                 ▼
                  ┌────────────────┐ ┌───────────────┐ ┌───────────────┐
-                 │ Audio Analysis │ │ Motion/Video  │ │ Event Fusion  │
-                 │ (librosa/ffmpeg)│ │ Analysis (CV) │ │ & Ranking     │
+                 │ Audio Analysis │ │ Motion        │ │ Event Fusion  │
+                 │ (librosa)      │ │ (ffmpeg+numpy)│ │ & Ranking     │
                  └────────────────┘ └───────────────┘ └───────┬───────┘
                                                                 ▼
                                                      ┌───────────────────┐
                                                      │ Video Composer     │
-                                                     │ (moviepy/ffmpeg)    │
+                                                     │ (ffmpeg)           │
                                                      └─────────┬───────────┘
                                                                 ▼
                                                      ┌───────────────────┐
-                                                     │ Rendered Highlight │
-                                                     │ Reel (mp4) → CDN/  │
-                                                     │ local storage      │
+                                                     │ Highlight reel     │
+                                                     │ (local storage)    │
                                                      └───────────────────┘
 ```
 
 ### 5.2 Processing Pipeline (Detail)
 
-1. **Ingestion**
-   - Save uploaded file to temp storage (local disk / S3 bucket).
-   - Extract metadata (duration, fps, resolution) via `ffprobe`.
+1. **Ingestion** — save upload; probe duration via ffprobe.
+2. **Audio Analysis** — ffmpeg extract WAV → librosa RMS/energy → normalized excitement curve.
+3. **Motion Analysis** — ffmpeg low-res grayscale pipe → frame differencing → normalized curve.
+4. **Fusion & Ranking** — weighted sum; local maxima with min gap; greedy fill to target duration; chronological order.
+5. **Composition** — single-pass ffmpeg filter graph (trim/scale/concat); music mix with ducking; height cap for hosted RAM.
+6. **Delivery** — store under `storage_data/{job_id}/`; serve via `/media`.
 
-2. **Audio Analysis**
-   - Extract audio track via `ffmpeg`.
-   - Compute short-time energy / RMS amplitude over sliding windows (e.g., 0.5s windows) using `librosa`.
-   - Normalize and smooth signal; detect peaks above a dynamic threshold (mean + k·stddev).
-   - Output: list of `(timestamp, audio_excitement_score)`.
-
-3. **Visual Motion Analysis**
-   - Sample video frames at reduced rate (e.g., 5 fps) for speed.
-   - Compute frame-to-frame motion magnitude via optical flow (OpenCV `calcOpticalFlowFarneback` or simpler frame differencing for speed).
-   - Aggregate motion score per time window matching audio windows.
-   - Output: list of `(timestamp, motion_excitement_score)`.
-
-4. **Event Fusion & Ranking**
-   - Normalize both signal arrays to 0–1 scale.
-   - Combine: `excitement(t) = w_audio * audio(t) + w_motion * motion(t)` (default weights ~0.6 audio / 0.4 motion, tunable).
-   - Find local maxima with minimum spacing (e.g., 8s apart) to avoid near-duplicate clips.
-   - Sort candidates by score descending; greedily select top candidates until target reel duration is filled (respecting per-clip length ~5–8s).
-   - Re-sort selected clips by original chronological order for natural narrative flow.
-
-5. **Video Composition**
-   - Use `moviepy` (or direct `ffmpeg` filter graph for performance) to:
-     - Cut each selected segment from the source video.
-     - Concatenate segments with short crossfade transitions.
-     - Overlay chosen background music track, looped/trimmed to reel length, mixed under original audio (ducking original audio to ~40% volume, music to ~70%).
-   - Render final mp4 (H.264, 1080p or downscaled for speed).
-
-6. **Delivery**
-   - Store rendered file; return signed URL / local path to frontend.
-   - Frontend displays video player + download button.
-
-### 5.3 Tech Stack (Proposed)
+### 5.3 Tech Stack (As-built)
 
 | Layer | Technology |
 |---|---|
-| Frontend | React + Vite (or Next.js), Tailwind CSS |
-| Backend API | FastAPI (Python) — best ecosystem fit for audio/video ML libs |
-| Audio processing | `librosa`, `ffmpeg` |
-| Video/motion processing | OpenCV, `ffmpeg` |
-| Video composition/render | `moviepy` (wraps ffmpeg) or raw `ffmpeg` filter graphs for speed |
-| Task orchestration | Simple async background task (FastAPI `BackgroundTasks` or Celery+Redis if time allows) |
-| Storage | Local filesystem for hackathon demo; S3-compatible bucket if deployed |
-| Deployment (optional) | Docker Compose; Render/Railway/Fly.io for live demo |
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS, ogl (Strands background) |
+| Backend API | FastAPI + background threads for jobs |
+| Audio | librosa + system ffmpeg |
+| Motion | ffmpeg frame stream + numpy |
+| Composition | system ffmpeg (no moviepy) |
+| Storage | Local filesystem per job |
+| Deploy | Vercel (frontend) + Railway Docker (backend) |
 
-### 5.4 Data Flow / API Contract (Sketch)
+### 5.4 API Contract
 
 ```
 POST /api/upload
-  → multipart/form-data { file }
-  ← { job_id }
+  multipart: file, music_track_id?, target_duration_seconds? (30|60|90)
+  → { job_id }
 
 GET /api/status/{job_id}
-  ← { status: "analyzing_audio" | "analyzing_motion" | "selecting" | "rendering" | "done" | "error",
-      progress: 0-100 }
+  → { job_id, stage, progress, message?, error? }
 
 GET /api/result/{job_id}
-  ← { video_url, duration, clip_count, thumbnail_url }
+  → { job_id, video_url, duration_seconds, source_duration_seconds,
+      clip_count, clips[], music_track_id?, music_track_title? }
+
+POST /api/jobs/{job_id}/rerender
+  JSON: { clips: HighlightClip[] }
+  → { job_id }
+
+GET /api/music
+  → [{ id, title, preview_url }]
+
+GET /health
+  → { status: "ok" }
 ```
 
 ---
 
-## 6. Highlight Detection Algorithm — Design Notes
+## 6. Highlight Detection Algorithm
 
 ### 6.1 Signal Model
-Treat the game footage as two parallel time-series signals (audio energy, visual motion), each producing an "excitement curve" over time. Peaks in the fused curve correspond to likely highlight moments (goals, big plays, celebrations, collisions).
+Two parallel time-series (audio energy, visual motion) → fused excitement curve → peaks = highlight candidates.
 
-### 6.2 Why Multimodal Fusion (Creativity/Complexity Angle)
-- Audio-only detection catches crowd reactions but can false-positive on music/whistles/commentary.
-- Motion-only detection catches fast action (sprints, collisions) but misses celebration moments where motion is actually a crowd stand-up rather than on-field.
-- Fusing both, with tunable weighting, produces a more robust "excitement score" than either alone — a genuinely non-trivial signal processing problem, which strengthens the technical complexity narrative for judges.
+### 6.2 Why Multimodal
+- Audio catches crowd reactions; can false-positive on music/whistles.
+- Motion catches action; can miss quiet celebrations.
+- Fusion with tunable weights is more robust than either alone.
 
-### 6.3 Tunable Parameters
-- `window_size` (analysis granularity, default 0.5s)
-- `min_gap_between_clips` (default 8s)
-- `clip_pre_roll` / `clip_post_roll` (default 3s / 4s)
-- `target_duration` (default 90s)
+### 6.3 Tunable Parameters (env / settings)
+- `analysis_window_seconds` (default 0.5)
+- `min_gap_between_clips_seconds` (default 8)
+- `clip_pre_roll_seconds` / `clip_post_roll_seconds` (default 4 / 4)
+- `target_duration_seconds` (default 90; UI offers 30/60/90)
 - `audio_weight` / `motion_weight` (default 0.6 / 0.4)
+- `motion_sample_fps` (default 2)
+- `max_render_height` (default 720; often 480 on Railway)
 
-### 6.4 Fallback Behavior
-If audio signal is too flat (e.g., no crowd, silent gym footage), auto-shift weighting toward motion-only scoring. Detect this by checking variance of the normalized audio signal against a minimum threshold.
+### 6.4 Fallback
+If audio variance is too low, fusion shifts toward motion-only scoring.
 
 ---
 
 ## 7. UX / UI Flow
 
-1. **Landing Page** — Product name, tagline, "Upload Your Game Footage" CTA. Optional "Try a Sample Clip" button for judges/demo speed.
-2. **Upload Screen** — Drag-and-drop or file picker; shows file name/size/duration once selected; "Generate Highlights" button.
-3. **Processing Screen** — Progress bar with stage labels ("Analyzing crowd reactions...", "Detecting big plays...", "Editing your reel..."); estimated time remaining.
-4. **Result Screen** — Embedded video player with the rendered highlight reel; Download button; (stretch) "Regenerate with different settings" controls (duration slider, music picker).
-5. **(Stretch) Share Screen** — Copyable link, social-format export buttons (9:16 / 16:9).
+1. **Landing** — ClipCoach brand, tagline, upload CTA (Strands background).
+2. **Upload** — file picker, reel length, soundtrack with preview.
+3. **Processing** — stage labels + progress.
+4. **Result** — video player, download, timeline editor, re-render.
 
 ### 7.1 Design Principles
-- Zero-friction: no sign-up, no complex settings by default (smart defaults do the work).
-- Transparent progress: users should never wonder if it's frozen — always show current pipeline stage.
-- Delight: the reveal of the finished highlight reel should feel like a payoff moment (e.g., subtle animation/confetti on completion).
+- Zero-friction defaults; transparent progress; payoff moment on reveal.
 
 ---
 
-## 8. Milestones / Hackathon Build Plan
+## 8. Repo Layout
 
-Given a typical ~24–36 hour hackathon window:
+```
+backend/app/services/   audio, motion, fusion, composer, pipeline, music, media_utils
+backend/app/api/routes/ jobs, music
+frontend/src/           app, components, lib
+docs/PRD.md
+```
 
-| Phase | Time | Tasks |
-|---|---|---|
-| **Hour 0–2** | Setup | Repo scaffolding, FastAPI + React boilerplate, sample footage sourcing (grab a few free stock sports clips/World Cup highlights for testing) |
-| **Hour 2–8** | Core pipeline v1 | Audio energy extraction + peak detection working end-to-end on a sample video; CLI script proving the algorithm before wiring UI |
-| **Hour 8–14** | Motion analysis + fusion | Add optical flow/motion scoring; combine into fused excitement curve; tune thresholds against sample footage |
-| **Hour 14–20** | Video composition | Auto-cut + concatenate clips, add music overlay, render final mp4; wire up backend job status API |
-| **Hour 20–28** | Frontend integration | Build upload → progress → result UI; connect to backend; end-to-end test with real uploads |
-| **Hour 28–32** | Polish | Transitions/crossfades, UI polish, error handling, prepare 2–3 great demo clips |
-| **Hour 32–36** | Demo prep | Record backup demo video (in case live processing fails), rehearse pitch, prepare slides tying back to judging criteria |
-
-### 8.1 Risk Mitigation
-- **Risk**: live processing too slow/flaky during judging → **Mitigation**: pre-process 1–2 impressive sample videos ahead of time as a guaranteed fallback demo, while still showing live upload capability.
-- **Risk**: ffmpeg/moviepy rendering performance issues → **Mitigation**: downscale resolution/frame sampling rate aggressively for analysis; only use full resolution for final render.
-- **Risk**: poor highlight selection on unfamiliar footage → **Mitigation**: test early against 3–4 varied sample clips (soccer, basketball) and tune thresholds/weights before demo day.
+See root `README.md` for setup and deployment.
 
 ---
 
-## 9. Success Metrics (Demo-Day Framing)
+## 9. Success Metrics (Demo-Day)
 
-Since this is a hackathon (not production), success = judge-perceived value:
-- Reel is generated end-to-end from raw upload within the live demo time window.
-- Selected highlight moments visibly correspond to real exciting moments (goals, big plays) — judges should immediately recognize the selections as "correct."
-- Final reel feels intentionally edited (music sync, transitions), not just a random montage.
-- Clear articulation during pitch of the multimodal signal-fusion technical approach (this is the technical complexity differentiator vs. a naive "just cut every N seconds" approach).
-
----
-
-## 10. Pitch Narrative (Tie-back to Judging Criteria)
-
-- **Creativity**: Most highlight tools either require manual tagging or rely on a single signal (e.g., just audio). ClipCoach fuses audio + visual motion signals into a unified excitement score — a novel, from-scratch approach to automatic sports editing.
-- **Technical Complexity**: Real signal processing (audio energy analysis, optical flow motion detection), a custom event-fusion/ranking algorithm, and an automated video composition pipeline (cutting, transitions, audio mixing, rendering) — multiple non-trivial systems working together.
-- **Practicality**: Every rec league, high school team, and content creator has this exact problem today. No specialized hardware, no manual editing skill required — just upload and go. Clear path to a real product (subscription/team-plan model, integration with team management apps).
+- End-to-end reel from raw upload within the demo window.
+- Selected moments correspond to real exciting plays.
+- Final reel feels intentionally edited (music + cuts).
+- Clear articulation of multimodal fusion as the technical differentiator.
 
 ---
 
-## 11. Open Questions / Decisions Needed
-- Confirm target sports for demo footage (soccer + basketball recommended for visual/audio variety).
-- Decide: pre-baked music library (2–3 tracks) vs. user upload — recommend pre-baked for hackathon simplicity.
-- Decide: local Docker demo vs. hosted deployment — recommend local-first with hosted as stretch if time allows.
-- Decide on fallback/backup demo video strategy (recommended: yes, always have one).
+## 10. Pitch Narrative
+
+- **Creativity**: fuses audio + visual motion into a unified excitement score.
+- **Technical Complexity**: signal processing, ranking, and automated ffmpeg composition.
+- **Practicality**: upload and go — clear path to a real product.

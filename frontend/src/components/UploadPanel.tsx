@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, listMusicTracks, resolveMediaUrl } from "@/lib/api";
-import type { MusicTrack, ReelLengthSeconds } from "@/lib/types";
-import { DEFAULT_REEL_LENGTH, REEL_LENGTH_OPTIONS } from "@/lib/types";
+import {
+  DEFAULT_REEL_LENGTH,
+  REEL_LENGTH_OPTIONS,
+  type MusicTrack,
+  type ReelLengthSeconds,
+} from "@/lib/types";
 
 interface UploadPanelProps {
   onSubmit: (

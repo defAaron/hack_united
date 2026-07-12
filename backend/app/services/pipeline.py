@@ -9,7 +9,6 @@ the hackathon MVP.
 from __future__ import annotations
 
 import logging
-import subprocess
 import time
 import uuid
 from pathlib import Path
@@ -21,31 +20,13 @@ from app.core.job_manager import JobManager
 from app.models.schemas import HighlightClip, JobStage
 from app.services import composer, fusion, motion_analysis
 from app.services.audio_analysis import analyze_audio_excitement
+from app.services.media_utils import probe_duration_seconds
 from app.services.music_catalog import get_music_track, resolve_music_path
 from app.services.signal_utils import TimeSeries
 from app.storage.local import StorageBackend
 
 OUTPUT_FILENAME = "highlight_reel.mp4"
 logger = logging.getLogger(__name__)
-
-
-def _probe_duration_seconds(video_path: Path) -> float:
-    result = subprocess.run(
-        [
-            "ffprobe",
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            str(video_path),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return float(result.stdout.strip())
 
 
 def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) -> None:
@@ -58,7 +39,7 @@ def run_pipeline(job_id: str, job_manager: JobManager, storage: StorageBackend) 
     started = time.perf_counter()
 
     try:
-        duration_seconds = _probe_duration_seconds(source_path)
+        duration_seconds = probe_duration_seconds(source_path)
         job_manager.update(job_id, source_duration_seconds=duration_seconds)
         logger.info("Job %s started duration=%.1fs path=%s", job_id, duration_seconds, source_path)
 
@@ -156,7 +137,7 @@ def run_rerender(
             raise RuntimeError("At least one clip is required to re-render")
 
         normalized: list[HighlightClip] = []
-        source_duration = job.source_duration_seconds or _probe_duration_seconds(source_path)
+        source_duration = job.source_duration_seconds or probe_duration_seconds(source_path)
         for clip in clips:
             start = max(0.0, float(clip.start_seconds))
             end = min(source_duration, float(clip.end_seconds))

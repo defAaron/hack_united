@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     # Keep this low — motion only needs a coarse excitement curve, and higher
     # fps dominates runtime on long AV1/H.265 uploads.
     motion_sample_fps: float = 2.0
+    # Cap highlight render height (hosted AV1 decode is memory-heavy).
+    max_render_height: int = 720
 
     @property
     def cors_origin_list(self) -> list[str]:

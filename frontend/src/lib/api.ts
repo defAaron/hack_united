@@ -10,7 +10,7 @@ import type {
  * Base URL of the FastAPI backend. Configure via NEXT_PUBLIC_API_URL:
  * - Local dev: defaults to http://localhost:8000 (see .env.local.example)
  * - Vercel:    point this at your hosted backend (Railway/Fly/Render), since
- *              the media-processing pipeline (ffmpeg/moviepy) is not a good
+ *              the media-processing pipeline (ffmpeg) is not a good
  *              fit for Vercel's serverless Python runtime.
  */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";

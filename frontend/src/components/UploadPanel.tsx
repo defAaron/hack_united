@@ -3,10 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, listMusicTracks, resolveMediaUrl } from "@/lib/api";
-import type { MusicTrack } from "@/lib/types";
+import type { MusicTrack, ReelLengthSeconds } from "@/lib/types";
+import { DEFAULT_REEL_LENGTH, REEL_LENGTH_OPTIONS } from "@/lib/types";
 
 interface UploadPanelProps {
-  onSubmit: (file: File, musicTrackId: string) => void;
+  onSubmit: (
+    file: File,
+    options: { musicTrackId: string; targetDurationSeconds: ReelLengthSeconds }
+  ) => void;
 }
 
 const ACCEPTED_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo"];
@@ -16,6 +20,7 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [selectedTrackId, setSelectedTrackId] = useState<string>("");
+  const [reelLength, setReelLength] = useState<ReelLengthSeconds>(DEFAULT_REEL_LENGTH);
   const [tracksError, setTracksError] = useState<string | null>(null);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +116,29 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
       </div>
 
       <div className="mt-6">
+        <p className="mb-3 text-sm font-medium text-[color:var(--accent)]">Reel length</p>
+        <div className="grid grid-cols-3 gap-2">
+          {REEL_LENGTH_OPTIONS.map((seconds) => (
+            <button
+              key={seconds}
+              type="button"
+              onClick={() => setReelLength(seconds)}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+                reelLength === seconds
+                  ? "border-[color:var(--accent)] bg-[rgba(243,229,171,0.12)] text-[color:var(--accent)]"
+                  : "border-[color:var(--panel-border)] text-[color:var(--muted)] hover:border-[rgba(243,229,171,0.35)]"
+              }`}
+            >
+              {seconds}s
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-[color:var(--muted)]">
+          Target length for the auto-selected highlight package.
+        </p>
+      </div>
+
+      <div className="mt-6">
         <p className="mb-3 text-sm font-medium text-[color:var(--accent)]">Background music</p>
         {tracksError && <p className="mb-3 text-sm text-red-300">{tracksError}</p>}
         <div className="space-y-2">
@@ -159,7 +187,14 @@ export function UploadPanel({ onSubmit }: UploadPanelProps) {
       <button
         type="button"
         disabled={!selectedFile || !selectedTrackId}
-        onClick={() => selectedFile && selectedTrackId && onSubmit(selectedFile, selectedTrackId)}
+        onClick={() =>
+          selectedFile &&
+          selectedTrackId &&
+          onSubmit(selectedFile, {
+            musicTrackId: selectedTrackId,
+            targetDurationSeconds: reelLength,
+          })
+        }
         className="mt-6 w-full rounded-xl bg-[color:var(--accent)] px-6 py-3 font-semibold text-black transition-colors hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:bg-[#3a3420] disabled:text-[#7a7048]"
       >
         Generate Highlights

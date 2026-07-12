@@ -28,9 +28,12 @@ class Job:
     result_path: str | None = None
     thumbnail_path: str | None = None
     duration_seconds: float = 0.0
+    source_duration_seconds: float = 0.0
     clips: list[HighlightClip] = field(default_factory=list)
     music_track_id: str | None = None
     music_track_title: str | None = None
+    # Per-job override for fusion target reel length (30/60/90). None = settings default.
+    target_duration_seconds: float | None = None
 
 
 class JobManager:

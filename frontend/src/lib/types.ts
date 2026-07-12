@@ -26,6 +26,7 @@ export interface JobStatusResponse {
 }
 
 export interface HighlightClip {
+  id?: string | null;
   start_seconds: number;
   end_seconds: number;
   excitement_score: number;
@@ -42,6 +43,7 @@ export interface JobResultResponse {
   video_url: string;
   thumbnail_url?: string | null;
   duration_seconds: number;
+  source_duration_seconds?: number;
   clip_count: number;
   clips: HighlightClip[];
   music_track_id?: string | null;
@@ -57,3 +59,15 @@ export const STAGE_LABELS: Record<JobStage, string> = {
   done: "Your highlight reel is ready!",
   error: "Something went wrong.",
 };
+
+/** Allowed highlight reel lengths (seconds) — keep in sync with backend pipeline_options. */
+export const REEL_LENGTH_OPTIONS = [30, 60, 90] as const;
+export type ReelLengthSeconds = (typeof REEL_LENGTH_OPTIONS)[number];
+export const DEFAULT_REEL_LENGTH: ReelLengthSeconds = 90;
+
+export function formatTimestamp(seconds: number): string {
+  const clamped = Math.max(0, seconds);
+  const mins = Math.floor(clamped / 60);
+  const secs = Math.floor(clamped % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}

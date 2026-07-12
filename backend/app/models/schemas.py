@@ -37,6 +37,7 @@ class JobStatusResponse(BaseModel):
 class HighlightClip(BaseModel):
     """A single selected highlight segment, in source-video time."""
 
+    id: str | None = None
     start_seconds: float
     end_seconds: float
     excitement_score: float
@@ -53,10 +54,17 @@ class JobResultResponse(BaseModel):
     video_url: str
     thumbnail_url: str | None = None
     duration_seconds: float
+    source_duration_seconds: float = 0.0
     clip_count: int
     clips: list[HighlightClip] = Field(default_factory=list)
     music_track_id: str | None = None
     music_track_title: str | None = None
+
+
+class RerenderRequest(BaseModel):
+    """User-edited clip list from the timeline editor."""
+
+    clips: list[HighlightClip] = Field(min_length=1)
 
 
 class PipelineOptions(BaseModel):

@@ -11,7 +11,7 @@ import { useHighlightJob } from "@/lib/useHighlightJob";
 const Strands = dynamic(() => import("@/components/Strands"), { ssr: false });
 
 export default function Home() {
-  const { state, status, result, errorMessage, submit, reset } = useHighlightJob();
+  const { state, status, result, errorMessage, submit, rerender, reset } = useHighlightJob();
 
   return (
     <main className="landing-shell">
@@ -46,7 +46,9 @@ export default function Home() {
 
         {state === "idle" && <UploadPanel onSubmit={submit} />}
         {(state === "uploading" || state === "processing") && <ProcessingPanel status={status} />}
-        {state === "done" && result && <ResultPanel result={result} onReset={reset} />}
+        {state === "done" && result && (
+          <ResultPanel result={result} onRerender={rerender} onReset={reset} />
+        )}
         {state === "error" && (
           <ErrorPanel message={errorMessage ?? "Unknown error"} onReset={reset} />
         )}

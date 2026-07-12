@@ -9,6 +9,8 @@ duration is filled - then re-sorts the selection chronologically.
 
 from __future__ import annotations
 
+import uuid
+
 import numpy as np
 
 from app.core.config import Settings, get_settings
@@ -97,7 +99,14 @@ def select_highlight_clips(
         end = min(video_duration_seconds, timestamp + settings.clip_post_roll_seconds)
         if end - start <= 0.5:
             continue
-        candidates.append(HighlightClip(start_seconds=start, end_seconds=end, excitement_score=score))
+        candidates.append(
+            HighlightClip(
+                id=str(uuid.uuid4()),
+                start_seconds=start,
+                end_seconds=end,
+                excitement_score=score,
+            )
+        )
 
     # Greedily fill the target duration budget, highest score first.
     candidates.sort(key=lambda clip: clip.excitement_score, reverse=True)

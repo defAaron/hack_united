@@ -15,9 +15,16 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.core.config import Settings, get_settings
 from app.core.job_manager import JobManager, get_job_manager
-from app.models.schemas import JobResultResponse, JobStage, JobStatusResponse, UploadResponse
+from app.core.pipeline_options import ALLOWED_TARGET_DURATIONS, DEFAULT_TARGET_DURATION
+from app.models.schemas import (
+    JobResultResponse,
+    JobStage,
+    JobStatusResponse,
+    RerenderRequest,
+    UploadResponse,
+)
 from app.services.music_catalog import get_music_track, list_music_tracks
-from app.services.pipeline import OUTPUT_FILENAME, run_pipeline
+from app.services.pipeline import OUTPUT_FILENAME, run_pipeline, run_rerender
 from app.storage.local import StorageBackend, get_storage_backend
 
 router = APIRouter(prefix="/api", tags=["jobs"])
@@ -35,6 +42,7 @@ ALLOWED_CONTENT_TYPES = {
 async def upload_video(
     file: UploadFile = File(...),
     music_track_id: str | None = Form(default=None),
+    target_duration_seconds: int | None = Form(default=None),
     settings: Settings = Depends(get_settings),
     job_manager: JobManager = Depends(get_job_manager),
     storage: StorageBackend = Depends(get_storage_backend),
@@ -50,6 +58,15 @@ async def upload_video(
     if selected_track is None and available_ids:
         # Default to the first catalog track when the client omits a selection.
         selected_track = list_music_tracks()[0]
+
+    resolved_duration = (
+        target_duration_seconds if target_duration_seconds is not None else DEFAULT_TARGET_DURATION
+    )
+    if resolved_duration not in ALLOWED_TARGET_DURATIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"target_duration_seconds must be one of {list(ALLOWED_TARGET_DURATIONS)}",
+        )
 
     # Stream to disk instead of buffering the whole file in RAM (176MB+ uploads).
     job = job_manager.create_job()
@@ -80,12 +97,14 @@ async def upload_video(
         progress=0,
         music_track_id=selected_track.id if selected_track else None,
         music_track_title=selected_track.title if selected_track else None,
+        target_duration_seconds=float(resolved_duration),
     )
     logger.info(
-        "Job %s uploaded %.1fMB music=%s — starting pipeline thread",
+        "Job %s uploaded %.1fMB music=%s target=%ss — starting pipeline thread",
         job.id,
         bytes_written / (1024 * 1024),
         selected_track.id if selected_track else "none",
+        resolved_duration,
     )
 
     # Dedicated daemon thread (not FastAPI BackgroundTasks) so long AV1 jobs
@@ -131,8 +150,50 @@ async def get_job_result(
         video_url=storage.url_for(job.id, OUTPUT_FILENAME),
         thumbnail_url=None,
         duration_seconds=job.duration_seconds,
+        source_duration_seconds=job.source_duration_seconds,
         clip_count=len(job.clips),
         clips=job.clips,
         music_track_id=job.music_track_id,
         music_track_title=job.music_track_title,
     )
+
+
+@router.post("/jobs/{job_id}/rerender", response_model=UploadResponse)
+async def rerender_job(
+    job_id: str,
+    body: RerenderRequest,
+    job_manager: JobManager = Depends(get_job_manager),
+    storage: StorageBackend = Depends(get_storage_backend),
+) -> UploadResponse:
+    """Re-render a finished job from a user-edited clip timeline."""
+    job = job_manager.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.source_path is None:
+        raise HTTPException(status_code=409, detail="Job has no source video to re-render")
+    if job.stage not in {JobStage.DONE, JobStage.ERROR}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Job cannot be re-rendered while stage={job.stage}",
+        )
+    if not body.clips:
+        raise HTTPException(status_code=400, detail="At least one clip is required")
+
+    job_manager.update(
+        job_id,
+        stage=JobStage.QUEUED,
+        progress=0,
+        message="Queued for re-edit...",
+        error=None,
+        clips=list(body.clips),
+    )
+
+    thread = threading.Thread(
+        target=run_rerender,
+        args=(job_id, list(body.clips), job_manager, storage),
+        name=f"rerender-{job_id[:8]}",
+        daemon=True,
+    )
+    thread.start()
+    logger.info("Job %s re-render queued with %d clips", job_id, len(body.clips))
+    return UploadResponse(job_id=job_id)

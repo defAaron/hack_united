@@ -1,4 +1,5 @@
 import type {
+  HighlightClip,
   JobResultResponse,
   JobStatusResponse,
   MusicTrack,
@@ -34,11 +35,17 @@ export async function listMusicTracks(): Promise<MusicTrack[]> {
   return handleResponse<MusicTrack[]>(response);
 }
 
-export async function uploadVideo(file: File, musicTrackId?: string): Promise<UploadResponse> {
+export async function uploadVideo(
+  file: File,
+  options?: { musicTrackId?: string; targetDurationSeconds?: number }
+): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  if (musicTrackId) {
-    formData.append("music_track_id", musicTrackId);
+  if (options?.musicTrackId) {
+    formData.append("music_track_id", options.musicTrackId);
+  }
+  if (options?.targetDurationSeconds != null) {
+    formData.append("target_duration_seconds", String(options.targetDurationSeconds));
   }
 
   const response = await fetch(`${API_BASE_URL}/api/upload`, {
@@ -56,6 +63,15 @@ export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
 export async function getJobResult(jobId: string): Promise<JobResultResponse> {
   const response = await fetch(`${API_BASE_URL}/api/result/${jobId}`);
   return handleResponse<JobResultResponse>(response);
+}
+
+export async function rerenderJob(jobId: string, clips: HighlightClip[]): Promise<UploadResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/rerender`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clips }),
+  });
+  return handleResponse<UploadResponse>(response);
 }
 
 export function resolveMediaUrl(path: string): string {
